@@ -1,0 +1,80 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+file_path = '/content/credit_customers.csv'  # Adjust the file path if necessary
+data = pd.read_csv(file_path)
+
+# Preprocessing
+data.dropna(inplace=True)
+data.drop_duplicates(inplace=True)
+le = LabelEncoder()
+for column in data.columns:
+    if data[column].dtype == 'object':
+        data[column] = le.fit_transform(data[column])
+
+# Split data
+X = data.drop('class', axis=1)
+y = data['class']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+# Initialize models
+logistic_model = LogisticRegression(max_iter=1000)
+knn_model = KNeighborsClassifier()
+svm_linear_model = SVC(kernel='linear')
+svm_rbf_model = SVC(kernel='rbf')
+
+# Fit models
+logistic_model.fit(X_train, y_train)
+knn_model.fit(X_train, y_train)
+svm_linear_model.fit(X_train, y_train)
+svm_rbf_model.fit(X_train, y_train)
+
+# Predictions
+logistic_predictions = logistic_model.predict(X_test)
+knn_predictions = knn_model.predict(X_test)
+svm_linear_predictions = svm_linear_model.predict(X_test)
+svm_rbf_predictions = svm_rbf_model.predict(X_test)
+
+# Function to plot confusion matrix
+def plot_confusion_matrix(cm, model_name):
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='coolwarm', xticklabels=['Positive', 'Negative'], yticklabels=['Positive', 'Negative'])
+    plt.title(f'Confusion Matrix for {model_name}')
+    plt.xlabel('ACTUAL VALUES')
+    plt.ylabel('PREDICTED VALUES')
+    plt.show()
+
+# Plot confusion matrices
+for predictions, model_name in [(logistic_predictions, 'Logistic Regression'),
+                                (knn_predictions, 'KNN Classification'),
+                                (svm_linear_predictions, 'SVM Classifier (Linear)'),
+                                (svm_rbf_predictions, 'SVM Classifier (RBF)')]:
+    cm = confusion_matrix(y_test, predictions)
+    plot_confusion_matrix(cm, model_name)
+
+# Evaluate and compare accuracies
+model_accuracies = {
+    'Logistic Regression': accuracy_score(y_test, logistic_predictions),
+
+    'KNN Classification': accuracy_score(y_test, knn_predictions),
+
+    'SVM Classifier (Linear)': accuracy_score(y_test, svm_linear_predictions),
+
+    'SVM Classifier (RBF)': accuracy_score(y_test, svm_rbf_predictions),
+
+}
+# Report the best model
+best_model = max(model_accuracies, key=model_accuracies.get)
+print(f"The model with the best accuracy is {best_model} with an accuracy of {model_accuracies[best_model]:.2f}.")
+
+from google.colab import drive
+drive.mount('/content/drive')
